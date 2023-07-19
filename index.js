@@ -11,7 +11,7 @@ import tradeRoute from "./src/routes/trades/tradeRoute.js";
 import traderRoute from "./src/routes/trader/traderRoute.js"
 
 const app = express();
-const port = 5577 || process.env.PORT;
+const port = 3000;
 
 app.use(express.json());
 
@@ -19,6 +19,7 @@ app.use(cors({
     origin: "*"
 }));
 
+app.get("/", (req, res) => res.send("It works"))
 
 app.use("/user", userRoute);
 app.use("/wallet", walletRoute);

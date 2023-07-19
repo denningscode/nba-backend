@@ -7,7 +7,11 @@ import db from "../../config/dbConfig.js";
 // route POST /user/register
 // access Public
 const registerUser = (req, res) => {
-    const { firstname, lastname, email, phone, country, password} = req.body;
+    const { firstname, lastname, email, phone, country, password, referred_by} = req.body;
+
+    const randomNumber = Math.floor(Math.random() * 999)
+    //generate referral code
+    const referralCode = `BITJ${randomNumber}${firstname[0]}${firstname[1]}${lastname[0]}${lastname[1]}`
 
     //check if all field are filled
     if (!firstname || !lastname || !email || !phone || !country || !password) {
@@ -35,8 +39,8 @@ const registerUser = (req, res) => {
                         })
                     } else {
                         //register user here
-                        const registerUser = `INSERT INTO users(firstname, lastname, email, phone, country, password) 
-                        VALUES ('${firstname}','${lastname}','${email.toLowerCase()}','${phone}','${country}','${password}')`;
+                        const registerUser = `INSERT INTO users(firstname, lastname, email, phone, country, password, referral_code, referred_by) 
+                        VALUES ('${firstname}','${lastname}','${email.toLowerCase()}','${phone}','${country}','${password}', '${referralCode}', ${!referred_by ? 'null' : referred_by})`;
                         
                         db.query(registerUser, (error, result) => {
                             if (error) {
@@ -92,7 +96,8 @@ const registerUser = (req, res) => {
                                                                                         lastname: loginResult[0].lastname,
                                                                                         email: loginResult[0].email,
                                                                                         phone: loginResult[0].phone,
-                                                                                        country: loginResult[0].country
+                                                                                        country: loginResult[0].country,
+                                                                                        referral_code: loginResult[0].referral_code
                                                                                     }, process.env.TOKEN_SECRET);
 
                                                                                     res.status(200).json({
@@ -167,7 +172,8 @@ const loginUser = (req, res) => {
                                 lastname: checkResults[0].lastname,
                                 email: checkResults[0].email,
                                 phone: checkResults[0].phone,
-                                country: checkResults[0].country
+                                country: checkResults[0].country,
+                                referral_code: checkResults[0].referral_code
                             }, process.env.TOKEN_SECRET);
             
                             res.status(200).json({
@@ -252,11 +258,65 @@ const getStatusBar = (req, res) => {
     })
 }
 
+// @desc Update user password
+// route POST /user/password
+// @access Private
+const updatePassword = (req, res) => {
+    const id = req.user.id;
+
+    const password = req.body.password;
+
+    const updatePassword = `UPDATE users SET password = '${password}' WHERE id = '${id}'`;
+    db.query(updatePassword, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: error.message
+            })
+        } else {
+            if (result) {
+                res.status(200).json({
+                    data: "Password updated"
+                });
+            }
+        }
+    })
+}
+
+
+// @desc Get total referrals
+// route GET user/referrals
+// @access Public
+const getReferrals = (req, res) => {
+    const code = req.params.code;
+
+    const getReferrals = `SELECT * FROM users WHERE referred_by = '${code}'`;
+
+    db.query(getReferrals, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: error.message
+            })
+        } else {
+            if (result) {
+                res.status(200).json({
+                    data: result.length
+                })
+            }
+        }
+    })
+}
+
+
+
+
+
 
 export { 
     registerUser, 
     loginUser, 
     currentUser,
     getCopyStatus,
-    getStatusBar
+    getStatusBar,
+    updatePassword,
+    getReferrals
 }
