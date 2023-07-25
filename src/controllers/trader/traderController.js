@@ -133,7 +133,7 @@ const stopCopy = (req, res) => {
 }
 
 const addTrader = (req, res) => {
-    const { code, title, rank, benefit, managed, name, email, commission, experience } = req.body;
+    const { code, rank, benefit, managed, name, email, commission, experience } = req.body;
 
     const picture = req.files.picture
 
@@ -150,32 +150,21 @@ const addTrader = (req, res) => {
                 })
             } else {
                 if (fileResult) {
-                    const addTrader = `INSERT INTO 
-                        traders (
-                            trader_code, 
-                            title, 
-                            rank, 
-                            picture, 
-                            benefit, 
-                            managed, 
-                            name, 
-                            email, 
-                            commission, 
-                            experience 
-                        ) VALUES (
-                            '${code}',
-                            'null',
-                            '${rank}',
-                            '${fileResult.secure_url}',
-                            '${benefit}',
-                            '${managed}',
-                            '${name}',
-                            '${email}',
-                            '${commission}',
-                            '${experience}'
-                        )`;
+                    const addTrader = `INSERT INTO traders (
+    trader_code,
+    rank,
+    picture,
+    benefit,
+    managed,
+    name,
+    email,
+    commission,
+    experience
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-                    db.query(addTrader, (addError, addResult) => {
+const values = [code, rank, fileResult.secure_url, benefit, managed, name, email, commission, experience];
+                    
+                    db.query(addTrader, values, (addError, addResult) => {
                         if (addError) {
                             res.status(500).json({
                                 data: "An error occured " + addError.message,
