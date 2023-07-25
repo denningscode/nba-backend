@@ -1,6 +1,7 @@
 import { validate } from "email-validator";
 import jwt from "jsonwebtoken";
 import db from "../../config/dbConfig.js";
+import cloudinary from "../../config/cloudinary.js";
 
 
 // @desc Register a new user
@@ -40,7 +41,7 @@ const registerUser = (req, res) => {
                     } else {
                         //register user here
                         const registerUser = `INSERT INTO users(firstname, lastname, email, phone, country, password, referral_code, referred_by) 
-                        VALUES ('${firstname}','${lastname}','${email.toLowerCase()}','${phone}','${country}','${password}', '${referralCode}', ${!referred_by ? 'null' : referred_by})`;
+                        VALUES ('${firstname}','${lastname}','${email.toLowerCase()}','${phone}','${country}','${password}', '${referralCode}', '${!referred_by ? "null" : referred_by}')`;
                         
                         db.query(registerUser, (error, result) => {
                             if (error) {
@@ -89,6 +90,8 @@ const registerUser = (req, res) => {
                                                                                 })
                                                                             } else {
                                                                                 if (loginResult) {
+                                                                                    const createAvatar = `INSERT INTO user_avatars (user_id) VALUES ('${loginResult[0].id}')`;
+                                                                                    db.query(createAvatar);
                                                                                     //generate token
                                                                                     const token = jwt.sign({
                                                                                         id: loginResult[0].id,
@@ -306,7 +309,227 @@ const getReferrals = (req, res) => {
     })
 }
 
+// @desc Get all users
+// route GET user/all
+// @access Public
+const getAllUsers = (req, res) => {
+    const getAllUsers = `SELECT * FROM users`;
 
+    db.query(getAllUsers, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: error.message
+            })
+        } else {
+            if (result) {
+                res.status(200).json(result)
+            }
+        }
+    })
+}
+
+const getAvatar = (req, res) => {
+    const id = req.user.id;
+
+    const getAvatar = `SELECT * FROM user_avatars WHERE user_id = '${id}'`;
+    db.query(getAvatar, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: "An error occured " + error.message
+            })
+        } else {
+            res.status(200).json(result[0])
+        }
+    })
+}
+
+const updateAvatar = (req, res) => {
+
+    const id = req.user.id;
+
+    const avatar = req.files.avatar;
+
+    if (!avatar) {
+        res.status(400).json({
+            data: "You must select a picture"
+        })
+    } else {
+        cloudinary.v2.uploader.upload(avatar.tempFilePath, (fileError, fileResult) => {
+            if (fileError) {
+                res.status(500).json({
+                    data: "An error occured while uploading QR code",
+                })
+            } else {
+                if (fileResult) {
+                    const updateAvatar = `UPDATE user_avatars SET avatars = '${fileResult.secure_url}' WHERE user_id = '${id}'`;
+
+                    db.query(updateAvatar, (addError, addResult) => {
+                        if (addError) {
+                            res.status(500).json({
+                                data: "An error occured " + addError.message,
+                            })
+                        } else {
+                            if (addResult) {
+                                res.status(200).json({
+                                    data: "Profile picture updated"
+                                })
+                            }
+                        }
+                    })
+                }
+            }
+        })
+    }
+}
+
+
+// @desc Get user by ID
+// route GET user/:id
+// @access Public
+const getUser = (req, res) => {
+    const getUser = `SELECT * FROM users WHERE id = '${req.params.id}'`;
+
+    db.query(getUser, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: error.message
+            })
+        } else {
+            if (result) {
+                res.status(200).json(result[0])
+            }
+        }
+    })
+}
+
+const deleteUser = (req, res) => {
+
+    const { id } = req.body;
+
+    if (!id) {
+        res.status(400).json({data: "ID must be provided"})
+    } else {
+        const getUser = `DELETE FROM users WHERE id = '${id}'`;
+
+        db.query(getUser, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: error.message
+                })
+            } else {
+                if (result) {
+                    res.status(200).json(result)
+                }
+            }
+        })
+    }
+
+    
+}
+
+const updateBalance = (req, res) => {
+
+    const capital = req.body.capital;
+    const id = req.params.id;
+
+    if (!capital) {
+        res.status(400).json({
+            data: "Fields cannot be empty"
+        })
+    } else {
+        const getUser = `UPDATE wallets SET balance = '${capital}' WHERE user_id = '${id}'`;
+
+        db.query(getUser, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: error.message
+                })
+            } else {
+                if (result) {
+                    res.status(200).json(result[0])
+                }
+            }
+        })
+    }
+
+    
+}
+
+const updateProfit = (req, res) => {
+
+    const profit = req.body.profit;
+    const id = req.params.id;
+
+    if (!profit) {
+        res.status(400).json({
+            data: "Fields cannot be empty"
+        })
+    } else {
+        const getUser = `UPDATE wallets SET profit = '${profit}' WHERE user_id = '${id}'`;
+
+        db.query(getUser, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: error.message
+                })
+            } else {
+                if (result) {
+                    res.status(200).json(result[0])
+                }
+            }
+        })
+    }
+
+    
+}
+
+const updateLoss = (req, res) => {
+
+    const loss = req.body.loss;
+    const id = req.params.id;
+
+    if (!loss) {
+        res.status(400).json({
+            data: "Fields cannot be empty"
+        })
+    } else {
+       const getUser = `UPDATE wallets SET loss = '${loss}' WHERE user_id = '${id}'`;
+
+        db.query(getUser, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: error.message
+                })
+            } else {
+                if (result) {
+                    res.status(200).json(result[0])
+                }
+            }
+        }) 
+    }
+
+    
+}
+
+const updateStatusBar = (req, res) => {
+
+    const bar = req.body.bar;
+    const id = req.params.id;
+
+    const getUser = `UPDATE users SET bar = '${bar}' WHERE id = '${id}'`;
+
+    db.query(getUser, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                data: error.message
+            })
+        } else {
+            if (result) {
+                res.status(200).json(result[0])
+            }
+        }
+    })
+}
 
 
 
@@ -318,5 +541,14 @@ export {
     getCopyStatus,
     getStatusBar,
     updatePassword,
-    getReferrals
+    getReferrals,
+    getAllUsers,
+    getUser,
+    updateBalance,
+    updateProfit,
+    updateLoss,
+    updateStatusBar,
+    getAvatar,
+    updateAvatar,
+    deleteUser
 }

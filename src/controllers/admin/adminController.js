@@ -51,8 +51,68 @@ const approveFunding = (req, res) => {
 
 }
 
+const updateAdmin = (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        res.status(400).json({
+            data: "Fields cannot be empty"
+        })
+    } else {
+        const loginAdmin = `UPDATE admin SET username = '${username}', password = '${password}'`;
+        db.query(loginAdmin, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: "An error occured " + error.message
+                })
+            } else {
+                res.status(200).json({
+                    data: {
+                        username: username,
+                        password: password
+                    },
+                    message: "Admin updated"
+                })
+            }
+        })
+    }
+}
+
+const loginAdmin = (req, res) => {
+
+    const { username, password } = req.body;
 
 
-export { approveFunding }
+    if (!username || !password) {
+        res.status(400).json({
+            data: "Fields cannot be empty"
+        })
+    } else {
+        const loginAdmin = `SELECT * FROM admin WHERE username = '${username}' AND password = '${password}'`;
+        db.query(loginAdmin, (error, result) => {
+            if (error) {
+                res.status(500).json({
+                    data: "An error occured " + error.message
+                })
+            } else {
+                if (result.length < 1) {
+                    res.status(400).json({
+                        data: "Invalid admin data"
+                    })
+                } else {
+                    res.status(200).json(result[0])
+                }
+            }
+        })
+    }
+
+    
+}
+
+
+
+
+
+export { approveFunding, loginAdmin, updateAdmin }
 
 

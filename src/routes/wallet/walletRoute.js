@@ -8,12 +8,14 @@ import {
     withdraw, 
     depositDemo,
     updateDemoBalance,
-    updateDemoProfit
+    updateDemoProfit,
+    getUserWalletByID
 } from "../../controllers/wallet/walletController.js";
 
 const router = express.Router();
 
 router.get("/", verifyToken, getUserWallet);
+router.get("/:id", getUserWalletByID);
 router.get("/demo", verifyToken, getUserDemoWallet);
 router.post("/deposit", verifyToken, deposit);
 router.post("/deposit/demo", verifyToken, depositDemo);

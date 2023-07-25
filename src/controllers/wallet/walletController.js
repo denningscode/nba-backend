@@ -31,6 +31,33 @@ const getUserWallet = (req, res) => {
     });
 }
 
+const getUserWalletByID = (req, res) => {
+    const userId = req.params.id;
+    
+    const getWallet = `SELECT * FROM wallets WHERE user_id = '${userId}'`;
+    db.query(getWallet, (error, result) => {
+        if (error) {
+            res.status(500).json({
+                message: error.message
+            });
+        } else {
+            if (result.length < 1) {
+                res.status(400).json({
+                    message: "No wallet was created for you, message surpport"
+                });
+            } else {
+                res.status(200).json({
+                    wallet_id: result[0].id,
+                    user_id: result[0].user_id,
+                    balance: result[0].balance,
+                    profit: result[0].profit,
+                    loss: result[0].loss
+                });
+            }
+        }
+    });
+}
+
 // @desc Get user wallet
 // route GET /wallet/demo
 // @access Private
@@ -99,6 +126,7 @@ const deposit = (req, res) => {
         
     } 
 }
+
 
 
 // @desc User fund demo wallet
@@ -208,11 +236,12 @@ const updateDemoProfit = (req, res) => {
 // @access Private
 const withdraw = (req, res) => {
     const userId = req.user.id;
-    const amount = req.body.amount;
+    const {amount, address, network, wallet_type} = req.body;
 
-    if (!amount) {
+
+    if (!amount || !address || !network || !wallet_type) {
         res.status(400).json({
-            message: "Amount field cannot be empty"
+            message: "Fields cannot be empty"
         })
     } else {
         // get sum of balance and profit 
@@ -277,5 +306,6 @@ export {
     withdraw, 
     depositDemo ,
     updateDemoBalance,
-    updateDemoProfit
+    updateDemoProfit,
+    getUserWalletByID
 }
